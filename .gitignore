@@ -9,8 +9,8 @@ venv/
 env/
 *.log
 
-# Database (Created automatically by database.py on first run)
-gurudatta_store.db
+# Database (tracked for Vercel deployment)
+# gurudatta_store.db
 
 # OS specific files
 .DS_Store

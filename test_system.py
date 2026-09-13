@@ -3,11 +3,17 @@ import json
 from app import app
 from database import get_db, init_db, clear_all_data
 
+import database
+
 class TestGurudattaShopSystem(unittest.TestCase):
     def setUp(self):
+        database.DB_PATH = 'test_gurudatta.db'
         self.client = app.test_client()
         init_db()
         clear_all_data()
+
+    def tearDown(self):
+        database.DB_PATH = database.BUNDLED_DB
 
     def test_01_product_lifecycle(self):
         """Test creating, fetching, and searching a product"""

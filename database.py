@@ -2,11 +2,25 @@ import sqlite3
 import os
 from contextlib import contextmanager
 
+import shutil
+
+PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
+BUNDLED_DB = os.path.join(PROJECT_ROOT, 'gurudatta_store.db')
+
 # On Vercel / serverless platforms, write to /tmp directory
 if os.environ.get('VERCEL'):
     DB_PATH = '/tmp/gurudatta_store.db'
 else:
-    DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'gurudatta_store.db')
+    DB_PATH = BUNDLED_DB
+
+def ensure_db_file():
+    """If running on Vercel and /tmp DB doesn't exist, seed it from the repository DB."""
+    if os.environ.get('VERCEL') and not os.path.exists(DB_PATH):
+        if os.path.exists(BUNDLED_DB):
+            try:
+                shutil.copy2(BUNDLED_DB, DB_PATH)
+            except Exception as e:
+                pass
 
 SCHEMA_SQL = """
 CREATE TABLE IF NOT EXISTS products (
@@ -83,6 +97,7 @@ CREATE INDEX IF NOT EXISTS idx_udhaar_customer ON udhaar_ledger(customer_id);
 """
 
 def init_db():
+    ensure_db_file()
     conn = sqlite3.connect(DB_PATH)
     try:
         conn.executescript(SCHEMA_SQL)
@@ -92,6 +107,7 @@ def init_db():
 
 @contextmanager
 def get_db():
+    ensure_db_file()
     if not os.path.exists(DB_PATH):
         init_db()
     conn = sqlite3.connect(DB_PATH)

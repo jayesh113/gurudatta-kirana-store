@@ -2,7 +2,8 @@ import datetime
 import sqlite3
 import socket
 import os
-from flask import Flask, render_template, request, jsonify
+import json
+from flask import Flask, render_template, request, jsonify, send_from_directory
 from database import get_db, init_db
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -13,6 +14,17 @@ app = Flask(__name__, template_folder=template_dir, static_folder=static_dir)
 
 # Ensure tables exist
 init_db()
+
+@app.after_request
+def add_header(response):
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
+
+@app.route('/static/<path:filename>')
+def serve_static(filename):
+    return send_from_directory(static_dir, filename)
 
 def get_local_ip():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -66,6 +78,61 @@ def change_admin_pin():
         return jsonify({"status": "error", "message": "New PIN must be at least 4 digits"}), 400
     ADMIN_PIN = new_pin
     return jsonify({"status": "success", "message": "Owner PIN updated successfully"})
+
+@app.route('/api/admin/export-data', methods=['GET'])
+def export_data():
+    with get_db() as conn:
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM products")
+        products = [dict_from_row(r) for r in cur.fetchall()]
+        cur.execute("SELECT * FROM customers")
+        customers = [dict_from_row(r) for r in cur.fetchall()]
+    return jsonify({"status": "success", "products": products, "customers": customers})
+
+@app.route('/api/admin/import-data', methods=['POST'])
+def import_data():
+    payload = request.json or {}
+    products = payload.get('products', [])
+    customers = payload.get('customers', [])
+    
+    with get_db() as conn:
+        cur = conn.cursor()
+        for p in products:
+            if not p.get('name'):
+                continue
+            if p.get('id'):
+                cur.execute("""
+                    INSERT OR REPLACE INTO products (id, name, category, unit, purchase_price, selling_price, stock_quantity, min_stock_alert)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    p.get('id'), p.get('name'), p.get('category', 'General'), p.get('unit', 'packet'),
+                    float(p.get('purchase_price', 0.0)), float(p.get('selling_price', 0.0)),
+                    float(p.get('stock_quantity', 0.0)), float(p.get('min_stock_alert', 5.0))
+                ))
+            else:
+                cur.execute("""
+                    INSERT INTO products (name, category, unit, purchase_price, selling_price, stock_quantity, min_stock_alert)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    p.get('name'), p.get('category', 'General'), p.get('unit', 'packet'),
+                    float(p.get('purchase_price', 0.0)), float(p.get('selling_price', 0.0)),
+                    float(p.get('stock_quantity', 0.0)), float(p.get('min_stock_alert', 5.0))
+                ))
+        for c in customers:
+            if not c.get('name'):
+                continue
+            if c.get('id'):
+                cur.execute("""
+                    INSERT OR REPLACE INTO customers (id, name, phone, address)
+                    VALUES (?, ?, ?, ?)
+                """, (c.get('id'), c.get('name'), c.get('phone'), c.get('address')))
+            else:
+                cur.execute("""
+                    INSERT INTO customers (name, phone, address)
+                    VALUES (?, ?, ?)
+                """, (c.get('name'), c.get('phone'), c.get('address')))
+        conn.commit()
+    return jsonify({"status": "success", "message": f"Successfully synced {len(products)} products and {len(customers)} customers!"})
 
 # ==========================================
 # 1. PRODUCT INVENTORY APIs
