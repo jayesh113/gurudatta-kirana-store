@@ -44,6 +44,29 @@ def get_server_info():
         "laptop_url": f"http://127.0.0.1:{port}"
     })
 
+ADMIN_PIN = "1234"
+
+@app.route('/api/admin/verify', methods=['POST'])
+def verify_admin():
+    data = request.json or {}
+    pin = str(data.get('pin', '')).strip()
+    if pin == ADMIN_PIN:
+        return jsonify({"status": "success", "message": "Admin unlocked successfully", "is_admin": True})
+    return jsonify({"status": "error", "message": "Incorrect Owner PIN (Default is 1234)"}), 401
+
+@app.route('/api/admin/change-pin', methods=['POST'])
+def change_admin_pin():
+    global ADMIN_PIN
+    data = request.json or {}
+    current_pin = str(data.get('current_pin', '')).strip()
+    new_pin = str(data.get('new_pin', '')).strip()
+    if current_pin != ADMIN_PIN:
+        return jsonify({"status": "error", "message": "Current PIN is incorrect"}), 400
+    if len(new_pin) < 4:
+        return jsonify({"status": "error", "message": "New PIN must be at least 4 digits"}), 400
+    ADMIN_PIN = new_pin
+    return jsonify({"status": "success", "message": "Owner PIN updated successfully"})
+
 # ==========================================
 # 1. PRODUCT INVENTORY APIs
 # ==========================================
