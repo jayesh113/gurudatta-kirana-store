@@ -22,6 +22,17 @@ document.addEventListener('DOMContentLoaded', () => {
   loadProducts();
   loadCustomerDropdown();
   loadCustomerCartFromStorage();
+
+  // Auto-sync: automatically check for new products and price changes every 10 seconds
+  setInterval(loadProducts, 10000);
+
+  // Sync immediately when user switches back to browser tab
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) loadProducts();
+  });
+  window.addEventListener('focus', () => {
+    loadProducts();
+  });
 });
 
 // ----------------------------------------------------------
