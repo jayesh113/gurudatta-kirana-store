@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0f172a">
+  <title>Gurudatta Kirana and General Stores - Management System</title>
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="/static/css/styles.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#fef7ee',
+              100: '#fdedd6',
+              500: '#f97316',
+              600: '#ea580c',
+              700: '#c2410c',
+              800: '#9a3412',
+              900: '#7c2d12',
+            },
+            primary: {
+              50: '#f0fdf4',
+              100: '#dcfce7',
+              600: '#16a34a',
+              700: '#15803d',
+              800: '#166534',
+            }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col font-sans pb-16 md:pb-0">
+
+  <!-- Top Navbar / Header -->
+  <header class="bg-slate-900 text-white shadow-lg sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        
+        <!-- Store Branding -->
+        <div class="flex items-center space-x-2.5 sm:space-x-3 cursor-pointer" onclick="switchTab('billing')">
+          <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-gradient-to-tr from-amber-500 to-orange-600 flex items-center justify-center text-white shadow-md flex-shrink-0">
+            <i data-lucide="store" class="w-5 h-5 sm:w-6 sm:h-6"></i>
+          </div>
+          <div class="truncate">
+            <h1 class="font-bold text-sm sm:text-lg leading-tight tracking-tight text-amber-400 truncate">
+              Gurudatta Kirana & General Stores
+            </h1>
+            <p class="text-[10px] sm:text-xs text-slate-400 hidden sm:block">Point of Sale & Shop Management System</p>
+          </div>
+        </div>
+
+        <!-- Navigation Tabs (Desktop) -->
+        <nav class="hidden md:flex space-x-1">
+          <button onclick="switchTab('billing')" id="nav-billing" class="tab-btn active-tab px-3 py-2 rounded-md text-sm font-medium transition flex items-center space-x-1.5">
+            <i data-lucide="shopping-cart" class="w-4 h-4"></i>
+            <span>Billing POS</span>
+          </button>
+          <button onclick="switchTab('inventory')" id="nav-inventory" class="tab-btn px-3 py-2 rounded-md text-sm font-medium transition flex items-center space-x-1.5">
+            <i data-lucide="package" class="w-4 h-4"></i>
+            <span>Inventory</span>
+          </button>
+          <button onclick="switchTab('stock')" id="nav-stock" class="tab-btn px-3 py-2 rounded-md text-sm font-medium transition flex items-center space-x-1.5 relative">
+            <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+            <span>Low Stock</span>
+            <span id="low-stock-badge" class="hidden bg-red-500 text-white text-xs px-1.5 py-0.2 rounded-full font-bold">0</span>
+          </button>
+          <button onclick="switchTab('customers')" id="nav-customers" class="tab-btn px-3 py-2 rounded-md text-sm font-medium transition flex items-center space-x-1.5">
+            <i data-lucide="users" class="w-4 h-4"></i>
+            <span>Udhaar</span>
+          </button>
+          <button onclick="switchTab('reports')" id="nav-reports" class="tab-btn px-3 py-2 rounded-md text-sm font-medium transition flex items-center space-x-1.5">
+            <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
+            <span>Reports</span>
+          </button>
+        </nav>
+
+        <!-- Right Side: Mobile Connect + Time -->
+        <div class="flex items-center space-x-2 sm:space-x-3 text-xs">
+          <!-- Mobile Connect Button -->
+          <button onclick="openMobileConnectModal()" class="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow transition">
+            <i data-lucide="smartphone" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i>
+            <span class="hidden sm:inline">📱 Connect Mobile</span>
+            <span class="sm:hidden">📱 Mobile</span>
+          </button>
+          
+          <div class="hidden lg:flex bg-slate-800 px-3 py-1.5 rounded-full border border-slate-700 items-center space-x-2 text-slate-300">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span id="live-clock">System Ready</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
+
+    <!-- ======================================================== -->
+    <!-- TAB 1: POS BILLING SYSTEM -->
+    <!-- ======================================================== -->
+    <section id="tab-billing" class="tab-content">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Left Side: Product Selector (Col 7) -->
+        <div class="lg:col-span-7 space-y-4">
+          
+          <!-- Search & Filter Bar -->
+          <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+            <div class="flex flex-col sm:flex-row gap-3">
+              <div class="relative flex-1">
+                <i data-lucide="search" class="w-5 h-5 absolute left-3 top-3 text-slate-400"></i>
+                <input 
+                  type="text" 
+                  id="billing-search" 
+                  placeholder="Type product name or scan (Press F2 to focus)..." 
+                  class="w-full pl-10 pr-4 py-2.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm"
+                  autocomplete="off"
+                >
+              </div>
+              <select id="billing-category-filter" class="px-3 py-2.5 rounded-lg border border-slate-300 text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-amber-500">
+                <option value="All">All Categories</option>
+              </select>
+            </div>
+            
+            <div class="mt-2 text-xs text-slate-500 flex justify-between">
+              <span>Quick Tip: Click any product card to add it to bill</span>
+              <span class="font-mono">Shortcuts: F2 (Search) | F8 (Clear) | F9 (Checkout)</span>
+            </div>
+          </div>
+
+          <!-- Products Grid -->
+          <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 min-h-[450px]">
+            <div class="flex items-center justify-between mb-3">
+              <h2 class="font-semibold text-slate-700 text-sm flex items-center gap-1.5">
+                <i data-lucide="layers" class="w-4 h-4 text-amber-600"></i>
+                Available Store Items
+              </h2>
+              <span id="product-count-badge" class="text-xs font-medium px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600">Loading...</span>
+            </div>
+
+            <div id="billing-products-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-[500px] overflow-y-auto pr-1">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Right Side: Bill & Checkout (Col 5) -->
+        <div class="lg:col-span-5 space-y-4">
+          <div class="bg-white rounded-xl shadow-md border border-slate-200 flex flex-col h-full overflow-hidden">
+            
+            <!-- Invoice Header & Customer Selection -->
+            <div class="p-4 bg-slate-50 border-b border-slate-200 space-y-3">
+              <div class="flex justify-between items-center">
+                <div>
+                  <span class="text-xs font-semibold uppercase tracking-wider text-amber-700 bg-amber-100 px-2 py-0.5 rounded">New Invoice</span>
+                  <div class="text-xs text-slate-500 mt-1">Shop: Gurudatta Kirana</div>
+                </div>
+                <button onclick="clearCart()" class="text-xs text-red-600 hover:text-red-700 font-medium flex items-center gap-1">
+                  <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Clear Cart (F8)
+                </button>
+              </div>
+
+              <!-- Customer Selector -->
+              <div class="flex gap-2 items-center">
+                <div class="relative flex-1">
+                  <select id="bill-customer-select" class="w-full pl-3 pr-8 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white">
+                    <option value="">👤 Walk-in Customer (Cash / UPI)</option>
+                    <!-- Populated via JS -->
+                  </select>
+                </div>
+                <button onclick="openModal('add-customer-modal')" title="Quick Add Customer" class="px-2.5 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-sm transition">
+                  <i data-lucide="user-plus" class="w-4 h-4"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Cart Items List -->
+            <div class="flex-1 p-3 overflow-y-auto max-h-[320px] min-h-[220px]">
+              <div id="cart-empty-state" class="flex flex-col items-center justify-center h-48 text-slate-400">
+                <i data-lucide="shopping-bag" class="w-12 h-12 mb-2 text-slate-300"></i>
+                <p class="text-sm font-medium">Cart is currently empty</p>
+                <p class="text-xs text-slate-400">Click on items on the left to add to bill</p>
+              </div>
+
+              <div id="cart-table-container" class="hidden space-y-2">
+                <!-- Cart items rendered dynamically -->
+              </div>
+            </div>
+
+            <!-- Calculation & Checkout Strip -->
+            <div class="p-4 bg-slate-50 border-t border-slate-200 space-y-3">
+              
+              <!-- Subtotal & Discount -->
+              <div class="space-y-1.5 text-sm text-slate-600">
+                <div class="flex justify-between">
+                  <span>Subtotal (<span id="cart-total-items">0</span> items):</span>
+                  <span class="font-semibold text-slate-800" id="cart-subtotal">₹0.00</span>
+                </div>
+                <div class="flex justify-between items-center">
+                  <span>Special Discount (₹):</span>
+                  <input 
+                    type="number" 
+                    id="cart-discount" 
+                    value="0" 
+                    min="0" 
+                    class="w-24 text-right px-2 py-1 text-sm border border-slate-300 rounded focus:ring-2 focus:ring-amber-500"
+                    oninput="recalculateCart()"
+                  >
+                </div>
+                <div class="border-t border-slate-200 pt-2 flex justify-between items-baseline">
+                  <span class="text-base font-bold text-slate-800">Grand Total:</span>
+                  <span class="text-2xl font-black text-amber-600" id="cart-grand-total">₹0.00</span>
+                </div>
+              </div>
+
+              <!-- Payment Mode Selector -->
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Payment Method</label>
+                <div class="grid grid-cols-3 gap-2">
+                  <label class="payment-option cursor-pointer">
+                    <input type="radio" name="payment_mode" value="cash" checked class="sr-only peer">
+                    <div class="text-center py-2 px-1 text-xs font-medium rounded-lg border border-slate-300 bg-white peer-checked:bg-emerald-600 peer-checked:text-white peer-checked:border-emerald-600 transition shadow-sm">
+                      💵 Cash
+                    </div>
+                  </label>
+                  <label class="payment-option cursor-pointer">
+                    <input type="radio" name="payment_mode" value="upi" class="sr-only peer">
+                    <div class="text-center py-2 px-1 text-xs font-medium rounded-lg border border-slate-300 bg-white peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600 transition shadow-sm">
+                      📱 UPI / QR
+                    </div>
+                  </label>
+                  <label class="payment-option cursor-pointer">
+                    <input type="radio" name="payment_mode" value="credit" class="sr-only peer">
+                    <div class="text-center py-2 px-1 text-xs font-medium rounded-lg border border-slate-300 bg-white peer-checked:bg-red-600 peer-checked:text-white peer-checked:border-red-600 transition shadow-sm">
+                      📖 Udhaar
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Action Buttons -->
+              <div class="space-y-2 pt-1">
+                <div class="grid grid-cols-2 gap-2">
+                  <button 
+                    onclick="processCheckout(true)" 
+                    id="btn-print-checkout"
+                    class="w-full bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white font-bold py-2.5 sm:py-3 px-3 rounded-xl shadow-md transition flex items-center justify-center gap-1.5 text-xs sm:text-sm"
+                  >
+                    <i data-lucide="printer" class="w-4 h-4"></i>
+                    <span>Print Bill (F9)</span>
+                  </button>
+
+                  <button 
+                    onclick="processCheckout(false)" 
+                    class="w-full bg-slate-800 hover:bg-slate-900 text-white font-semibold py-2.5 sm:py-3 px-3 rounded-xl transition flex items-center justify-center gap-1.5 text-xs sm:text-sm"
+                  >
+                    <i data-lucide="check" class="w-4 h-4"></i>
+                    <span>Save Only</span>
+                  </button>
+                </div>
+
+                <!-- WhatsApp Share Button -->
+                <button 
+                  onclick="processCheckoutAndWhatsApp()" 
+                  class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-4 rounded-xl transition flex items-center justify-center gap-2 text-xs sm:text-sm shadow-sm"
+                >
+                  <i data-lucide="share-2" class="w-4 h-4"></i>
+                  <span>📲 Share Bill on WhatsApp</span>
+                </button>
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ======================================================== -->
+    <!-- TAB 2: PRODUCT INVENTORY -->
+    <!-- ======================================================== -->
+    <section id="tab-inventory" class="tab-content hidden space-y-4">
+      
+      <!-- Top Actions Bar -->
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4">
+        <div class="flex flex-1 gap-3">
+          <div class="relative flex-1">
+            <i data-lucide="search" class="w-5 h-5 absolute left-3 top-3 text-slate-400"></i>
+            <input 
+              type="text" 
+              id="inventory-search" 
+              placeholder="Search products by name or category..." 
+              class="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-amber-500 text-sm"
+              oninput="filterInventory()"
+            >
+          </div>
+          <select id="inventory-category-filter" class="px-3 py-2 rounded-lg border border-slate-300 text-sm bg-slate-50" onchange="filterInventory()">
+            <option value="All">All Categories</option>
+          </select>
+        </div>
+
+        <button 
+          onclick="openAddProductModal()" 
+          class="bg-amber-600 hover:bg-amber-700 text-white font-semibold px-4 py-2 rounded-lg text-sm shadow-sm flex items-center justify-center gap-2 transition"
+        >
+          <i data-lucide="plus-circle" class="w-4 h-4"></i>
+          <span>Add New Product</span>
+        </button>
+      </div>
+
+      <!-- Inventory Table -->
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm text-slate-600">
+            <thead class="bg-slate-100 text-slate-700 uppercase font-semibold text-xs border-b border-slate-200">
+              <tr>
+                <th class="px-4 py-3">Product Name</th>
+                <th class="px-4 py-3">Category</th>
+                <th class="px-4 py-3 text-center">Unit</th>
+                <th class="px-4 py-3 text-right">Purchase Price</th>
+                <th class="px-4 py-3 text-right">Selling Price</th>
+                <th class="px-4 py-3 text-right">Margin / Profit</th>
+                <th class="px-4 py-3 text-center">Current Stock</th>
+                <th class="px-4 py-3 text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="inventory-table-body" class="divide-y divide-slate-200">
+              <!-- Loaded via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ======================================================== -->
+    <!-- TAB 3: LOW STOCK & QUICK RESTOCK -->
+    <!-- ======================================================== -->
+    <section id="tab-stock" class="tab-content hidden space-y-4">
+      
+      <div class="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-xl shadow-sm flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+          <div class="p-2 bg-amber-100 rounded-lg text-amber-700">
+            <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-amber-900 text-sm">Low Stock Alert Dashboard</h3>
+            <p class="text-xs text-amber-800">These items have reached or fallen below your minimum stock threshold. Restock them promptly.</p>
+          </div>
+        </div>
+        <button onclick="loadLowStockItems()" class="px-3 py-1.5 bg-white border border-amber-300 hover:bg-amber-100 text-amber-900 rounded-lg text-xs font-semibold transition">
+          Refresh List
+        </button>
+      </div>
+
+      <!-- Low Stock Grid / Table -->
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm">
+            <thead class="bg-slate-100 text-slate-700 uppercase font-semibold text-xs border-b border-slate-200">
+              <tr>
+                <th class="px-4 py-3">Product Name</th>
+                <th class="px-4 py-3">Category</th>
+                <th class="px-4 py-3 text-center">Unit</th>
+                <th class="px-4 py-3 text-right">Current Stock</th>
+                <th class="px-4 py-3 text-right">Alert Threshold</th>
+                <th class="px-4 py-3 text-center">Status</th>
+                <th class="px-4 py-3 text-center">Quick Restock (+ Quantity)</th>
+              </tr>
+            </thead>
+            <tbody id="low-stock-table-body" class="divide-y divide-slate-200">
+              <!-- Loaded via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ======================================================== -->
+    <!-- TAB 4: CUSTOMERS & UDHAAR LEDGER -->
+    <!-- ======================================================== -->
+    <section id="tab-customers" class="tab-content hidden space-y-4">
+      
+      <!-- Customer Search & Add -->
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4">
+        <div class="relative flex-1">
+          <i data-lucide="search" class="w-5 h-5 absolute left-3 top-3 text-slate-400"></i>
+          <input 
+            type="text" 
+            id="customer-search" 
+            placeholder="Search customer by name or phone number..." 
+            class="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-amber-500 text-sm"
+            oninput="loadCustomers()"
+          >
+        </div>
+
+        <button 
+          onclick="openModal('add-customer-modal')" 
+          class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg text-sm shadow-sm flex items-center justify-center gap-2 transition"
+        >
+          <i data-lucide="user-plus" class="w-4 h-4"></i>
+          <span>Add New Customer</span>
+        </button>
+      </div>
+
+      <!-- Customers Table -->
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm text-slate-600">
+            <thead class="bg-slate-100 text-slate-700 uppercase font-semibold text-xs border-b border-slate-200">
+              <tr>
+                <th class="px-4 py-3">Customer Name</th>
+                <th class="px-4 py-3">Phone Number</th>
+                <th class="px-4 py-3">Address</th>
+                <th class="px-4 py-3 text-right">Udhaar Balance</th>
+                <th class="px-4 py-3 text-center">Status</th>
+                <th class="px-4 py-3 text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="customers-table-body" class="divide-y divide-slate-200">
+              <!-- Loaded via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ======================================================== -->
+    <!-- TAB 5: SALES REPORTS & PROFIT -->
+    <!-- ======================================================== -->
+    <section id="tab-reports" class="tab-content hidden space-y-6">
+      
+      <!-- Metrics Overview Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        
+        <!-- Today Sales -->
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex items-center space-x-4">
+          <div class="p-3 rounded-lg bg-emerald-100 text-emerald-700">
+            <i data-lucide="calendar-check" class="w-7 h-7"></i>
+          </div>
+          <div>
+            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Today's Sales</p>
+            <h4 class="text-2xl font-bold text-slate-800" id="rep-today-sales">₹0.00</h4>
+            <p class="text-xs text-slate-500" id="rep-today-bills">0 Bills generated</p>
+          </div>
+        </div>
+
+        <!-- Weekly Sales -->
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex items-center space-x-4">
+          <div class="p-3 rounded-lg bg-blue-100 text-blue-700">
+            <i data-lucide="calendar-days" class="w-7 h-7"></i>
+          </div>
+          <div>
+            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Last 7 Days</p>
+            <h4 class="text-2xl font-bold text-slate-800" id="rep-weekly-sales">₹0.00</h4>
+            <p class="text-xs text-slate-500" id="rep-weekly-bills">0 Bills</p>
+          </div>
+        </div>
+
+        <!-- Monthly Sales -->
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex items-center space-x-4">
+          <div class="p-3 rounded-lg bg-indigo-100 text-indigo-700">
+            <i data-lucide="calendar-range" class="w-7 h-7"></i>
+          </div>
+          <div>
+            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">This Month</p>
+            <h4 class="text-2xl font-bold text-slate-800" id="rep-monthly-sales">₹0.00</h4>
+            <p class="text-xs text-slate-500" id="rep-monthly-bills">0 Bills</p>
+          </div>
+        </div>
+
+        <!-- Total Profit -->
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50 flex items-center space-x-4">
+          <div class="p-3 rounded-lg bg-amber-500 text-white shadow">
+            <i data-lucide="trending-up" class="w-7 h-7"></i>
+          </div>
+          <div>
+            <p class="text-xs font-semibold text-amber-900 uppercase tracking-wider">Total Profit</p>
+            <h4 class="text-2xl font-extrabold text-amber-700" id="rep-total-profit">₹0.00</h4>
+            <p class="text-xs text-amber-800">Selling Price - Purchase Price</p>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Best Sellers & Secondary Info -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Top Best-Selling Products (Col 7) -->
+        <div class="lg:col-span-7 bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+          <h3 class="font-bold text-slate-800 text-base mb-4 flex items-center gap-2">
+            <i data-lucide="award" class="w-5 h-5 text-amber-600"></i>
+            Top Best-Selling Items
+          </h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm">
+              <thead class="text-xs uppercase text-slate-500 border-b border-slate-200 bg-slate-50">
+                <tr>
+                  <th class="py-2 px-3">Rank</th>
+                  <th class="py-2 px-3">Product Name</th>
+                  <th class="py-2 px-3 text-right">Quantity Sold</th>
+                  <th class="py-2 px-3 text-right">Revenue</th>
+                  <th class="py-2 px-3 text-right">Profit Earned</th>
+                </tr>
+              </thead>
+              <tbody id="top-products-table" class="divide-y divide-slate-100">
+                <!-- Loaded via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Summary Side Card (Col 5) -->
+        <div class="lg:col-span-5 bg-white p-5 rounded-xl shadow-sm border border-slate-200 space-y-4">
+          <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
+            <i data-lucide="pie-chart" class="w-5 h-5 text-blue-600"></i>
+            Business Summary
+          </h3>
+
+          <div class="space-y-3 text-sm">
+            <div class="flex justify-between p-3 rounded-lg bg-slate-50">
+              <span class="text-slate-600">Total Unique Products:</span>
+              <span class="font-bold text-slate-800" id="summary-total-products">0</span>
+            </div>
+            <div class="flex justify-between p-3 rounded-lg bg-red-50 text-red-900">
+              <span>Total Outstanding Udhaar:</span>
+              <span class="font-bold text-red-700" id="summary-total-udhaar">₹0.00</span>
+            </div>
+            <div class="flex justify-between p-3 rounded-lg bg-amber-50 text-amber-900">
+              <span>Items Running Low:</span>
+              <span class="font-bold text-amber-700" id="summary-low-stock">0</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Recent Bills Table -->
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="p-4 border-b border-slate-200 flex justify-between items-center">
+          <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
+            <i data-lucide="receipt" class="w-5 h-5 text-emerald-600"></i>
+            Recent Bills / Invoices
+          </h3>
+          <button onclick="loadReports()" class="text-xs text-slate-500 hover:text-slate-800 flex items-center gap-1">
+            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Refresh
+          </button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm">
+            <thead class="bg-slate-50 text-slate-600 uppercase font-semibold text-xs border-b border-slate-200">
+              <tr>
+                <th class="px-4 py-3">Invoice No</th>
+                <th class="px-4 py-3">Date & Time</th>
+                <th class="px-4 py-3">Customer</th>
+                <th class="px-4 py-3">Payment</th>
+                <th class="px-4 py-3 text-right">Bill Total</th>
+                <th class="px-4 py-3 text-center">Action</th>
+              </tr>
+            </thead>
+            <tbody id="recent-sales-table" class="divide-y divide-slate-100">
+              <!-- Loaded via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- Sticky Bottom Cart Floating Pill for Mobile Screens -->
+  <div id="mobile-cart-bar" class="lg:hidden fixed bottom-16 left-3 right-3 bg-slate-900/95 backdrop-blur text-white p-3 rounded-2xl shadow-2xl border border-slate-700 flex justify-between items-center hidden z-30 transition-all">
+    <div class="flex items-center space-x-2.5">
+      <div class="w-9 h-9 rounded-xl bg-amber-500 text-slate-950 font-black text-sm flex items-center justify-center shadow">
+        <span id="mobile-cart-count">0</span>
+      </div>
+      <div>
+        <span class="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Total Bill</span>
+        <p class="font-black text-base text-amber-400 leading-none" id="mobile-cart-total">₹0.00</p>
+      </div>
+    </div>
+    <button onclick="scrollToBillSection()" class="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold px-3.5 py-2 rounded-xl text-xs flex items-center gap-1 shadow">
+      <span>Review & Pay</span>
+      <i data-lucide="arrow-down" class="w-3.5 h-3.5"></i>
+    </button>
+  </div>
+
+  <!-- Fixed Mobile Bottom Navigation Bar -->
+  <div class="md:hidden fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800 flex justify-around py-2 px-1 z-40 shadow-2xl">
+    <button onclick="switchTab('billing')" id="m-nav-billing" class="flex flex-col items-center text-amber-500 text-[10px] font-semibold">
+      <i data-lucide="shopping-cart" class="w-5 h-5"></i>
+      <span>Billing</span>
+    </button>
+    <button onclick="switchTab('inventory')" id="m-nav-inventory" class="flex flex-col items-center text-slate-400 text-[10px] font-medium">
+      <i data-lucide="package" class="w-5 h-5"></i>
+      <span>Stock</span>
+    </button>
+    <button onclick="switchTab('stock')" id="m-nav-stock" class="flex flex-col items-center text-slate-400 text-[10px] font-medium relative">
+      <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+      <span>Alerts</span>
+      <span id="m-low-stock-badge" class="hidden absolute -top-1 right-2 bg-red-500 text-white text-[9px] px-1 rounded-full font-bold">0</span>
+    </button>
+    <button onclick="switchTab('customers')" id="m-nav-customers" class="flex flex-col items-center text-slate-400 text-[10px] font-medium">
+      <i data-lucide="users" class="w-5 h-5"></i>
+      <span>Udhaar</span>
+    </button>
+    <button onclick="switchTab('reports')" id="m-nav-reports" class="flex flex-col items-center text-slate-400 text-[10px] font-medium">
+      <i data-lucide="bar-chart-3" class="w-5 h-5"></i>
+      <span>Reports</span>
+    </button>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODALS -->
+  <!-- ======================================================== -->
+
+  <!-- Add/Edit Product Modal -->
+  <div id="product-modal" class="modal-backdrop hidden fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      <div class="bg-slate-900 text-white px-6 py-4 flex justify-between items-center">
+        <h3 id="product-modal-title" class="font-bold text-base flex items-center gap-2">
+          <i data-lucide="package-plus" class="w-5 h-5 text-amber-400"></i>
+          Add New Product
+        </h3>
+        <button onclick="closeModal('product-modal')" class="text-slate-400 hover:text-white">&times;</button>
+      </div>
+
+      <form id="product-form" onsubmit="saveProduct(event)" class="p-6 space-y-4">
+        <input type="hidden" id="prod-id" value="">
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Product Name *</label>
+          <input type="text" id="prod-name" required placeholder="e.g., Aashirvaad Atta 5kg" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Category</label>
+            <input type="text" id="prod-category" placeholder="e.g., Grains, Oil, Spices" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Unit</label>
+            <select id="prod-unit" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 bg-white">
+              <option value="packet">packet</option>
+              <option value="kg">kg</option>
+              <option value="g">gram (g)</option>
+              <option value="liter">liter (L)</option>
+              <option value="piece">piece (pc)</option>
+              <option value="bag">bag</option>
+              <option value="box">box</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Purchase Price (₹) *</label>
+            <input type="number" step="0.01" id="prod-purchase" required placeholder="Cost to you" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Selling Price (₹) *</label>
+            <input type="number" step="0.01" id="prod-selling" required placeholder="Customer price" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Opening Stock *</label>
+            <input type="number" step="0.1" id="prod-stock" required placeholder="Quantity in shop" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Low Stock Alert Level</label>
+            <input type="number" step="0.1" id="prod-alert" value="5" placeholder="Minimum stock" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500">
+          </div>
+        </div>
+
+        <div class="pt-3 border-t border-slate-200 flex justify-end gap-2">
+          <button type="button" onclick="closeModal('product-modal')" class="px-4 py-2 border border-slate-300 text-slate-600 rounded-lg text-sm font-medium hover:bg-slate-50">Cancel</button>
+          <button type="submit" class="px-5 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-sm font-semibold shadow-sm transition">Save Product</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Add Customer Modal -->
+  <div id="add-customer-modal" class="modal-backdrop hidden fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
+      <div class="bg-slate-900 text-white px-6 py-4 flex justify-between items-center">
+        <h3 class="font-bold text-base flex items-center gap-2">
+          <i data-lucide="user-plus" class="w-5 h-5 text-blue-400"></i>
+          Register Customer
+        </h3>
+        <button onclick="closeModal('add-customer-modal')" class="text-slate-400 hover:text-white">&times;</button>
+      </div>
+
+      <form id="customer-form" onsubmit="saveCustomer(event)" class="p-6 space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Customer Full Name *</label>
+          <input type="text" id="cust-name" required placeholder="e.g., Ramesh Sharma" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Mobile Phone Number</label>
+          <input type="text" id="cust-phone" placeholder="e.g., 9876543210" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Address / Landmark</label>
+          <textarea id="cust-address" rows="2" placeholder="e.g., Main Bazaar, near Temple" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"></textarea>
+        </div>
+
+        <div class="pt-3 border-t border-slate-200 flex justify-end gap-2">
+          <button type="button" onclick="closeModal('add-customer-modal')" class="px-4 py-2 border border-slate-300 text-slate-600 rounded-lg text-sm">Cancel</button>
+          <button type="submit" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold shadow-sm">Save Customer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Customer Ledger / Udhaar Modal -->
+  <div id="customer-ledger-modal" class="modal-backdrop hidden fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden">
+      
+      <!-- Ledger Header -->
+      <div class="bg-slate-900 text-white px-6 py-4 flex justify-between items-center">
+        <div>
+          <h3 class="font-bold text-base" id="ledger-cust-name">Customer Ledger</h3>
+          <p class="text-xs text-slate-300" id="ledger-cust-phone">Phone: -</p>
+        </div>
+        <button onclick="closeModal('customer-ledger-modal')" class="text-slate-400 hover:text-white">&times;</button>
+      </div>
+
+      <!-- Ledger Summary Cards -->
+      <div class="grid grid-cols-3 gap-2 p-4 bg-slate-50 border-b border-slate-200 text-center">
+        <div class="bg-white p-2 rounded-lg border border-slate-200">
+          <span class="text-xs text-slate-500">Total Udhaar Taken</span>
+          <p class="font-bold text-slate-800 text-sm" id="ledger-total-credit">₹0.00</p>
+        </div>
+        <div class="bg-white p-2 rounded-lg border border-slate-200">
+          <span class="text-xs text-slate-500">Total Repaid</span>
+          <p class="font-bold text-emerald-600 text-sm" id="ledger-total-paid">₹0.00</p>
+        </div>
+        <div class="bg-red-50 p-2 rounded-lg border border-red-200">
+          <span class="text-xs font-semibold text-red-700">Current Balance Due</span>
+          <p class="font-extrabold text-red-700 text-base" id="ledger-balance-due">₹0.00</p>
+        </div>
+      </div>
+
+      <!-- Repayment Quick Form -->
+      <div class="p-4 bg-amber-50/60 border-b border-amber-200">
+        <form id="repay-form" onsubmit="submitRepayment(event)" class="flex flex-col sm:flex-row gap-2 items-center">
+          <input type="hidden" id="repay-cust-id" value="">
+          <div class="flex-1 w-full">
+            <input type="number" step="0.01" id="repay-amount" required placeholder="Amount received (₹)" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-emerald-500">
+          </div>
+          <div class="flex-1 w-full">
+            <input type="text" id="repay-notes" placeholder="Note (e.g., GPay, Cash)" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white">
+          </div>
+          <button type="submit" class="w-full sm:w-auto px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold shadow whitespace-nowrap">
+            + Record Repayment
+          </button>
+        </form>
+      </div>
+
+      <!-- Ledger Transactions History -->
+      <div class="flex-1 overflow-y-auto p-4 max-h-[350px]">
+        <h4 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Transaction History</h4>
+        <div id="ledger-entries-list" class="space-y-2">
+          <!-- Populated via JS -->
+        </div>
+      </div>
+
+      <div class="p-4 bg-slate-50 border-t border-slate-200 text-right">
+        <button onclick="closeModal('customer-ledger-modal')" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-sm font-medium">Close</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- RECEIPT PRINT CONTAINER (Visible only in print / preview) -->
+  <!-- ======================================================== -->
+  <div id="printable-receipt" class="printable-area hidden">
+    <div class="receipt-header">
+      <h2>श्री गुरुदत्त प्रसन्न</h2>
+      <h1>GURUDATTA KIRANA AND GENERAL STORES</h1>
+      <p class="tagline">Wholesale & Retail Kirana Merchant</p>
+      <p>Main Road, Market Yard, Near Bus Stand</p>
+      <p>Phone: 9876543210 / 9123456780</p>
+      <div class="receipt-divider"></div>
+    </div>
+
+    <div class="receipt-meta">
+      <div><strong>Invoice:</strong> <span id="rec-inv-no"></span></div>
+      <div><strong>Date:</strong> <span id="rec-date"></span></div>
+      <div><strong>Customer:</strong> <span id="rec-customer"></span></div>
+      <div><strong>Payment:</strong> <span id="rec-payment-mode"></span></div>
+    </div>
+
+    <div class="receipt-divider"></div>
+
+    <table class="receipt-table">
+      <thead>
+        <tr>
+          <th style="text-align: left;">Item</th>
+          <th style="text-align: center;">Qty</th>
+          <th style="text-align: right;">Rate</th>
+          <th style="text-align: right;">Amount</th>
+        </tr>
+      </thead>
+      <tbody id="rec-items-body">
+        <!-- Rendered items -->
+      </tbody>
+    </table>
+
+    <div class="receipt-divider"></div>
+
+    <div class="receipt-totals">
+      <div class="row"><span>Subtotal:</span><span id="rec-subtotal"></span></div>
+      <div class="row"><span>Discount:</span><span id="rec-discount"></span></div>
+      <div class="row grand-total"><span>GRAND TOTAL:</span><span id="rec-total"></span></div>
+    </div>
+
+    <div class="receipt-divider"></div>
+
+    <div class="receipt-footer">
+      <p>धन्यवाद! पुन्हा भेट द्या!</p>
+      <p>Thank you for shopping with us! Visit again!</p>
+      <p class="small">* Goods once sold will not be returned after 3 days *</p>
+    </div>
+  </div>
+
+  <!-- Mobile Connect & QR Code Modal -->
+  <div id="mobile-connect-modal" class="modal-backdrop hidden fixed inset-0 bg-slate-900/70 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden text-center animate-in fade-in zoom-in-95 duration-150">
+      <div class="bg-slate-900 text-white px-5 py-4 flex justify-between items-center">
+        <h3 class="font-bold text-base flex items-center gap-2">
+          <i data-lucide="smartphone" class="w-5 h-5 text-emerald-400"></i>
+          Connect Mobile Phone
+        </h3>
+        <button onclick="closeModal('mobile-connect-modal')" class="text-slate-400 hover:text-white">&times;</button>
+      </div>
+
+      <div class="p-5 space-y-3.5">
+        <p class="text-xs text-slate-600">
+          Make sure your phone is connected to the <strong>same Wi-Fi network</strong> as this laptop.
+        </p>
+
+        <!-- QR Code Container -->
+        <div class="p-3 bg-slate-50 border border-slate-200 rounded-2xl inline-block shadow-sm">
+          <img id="mobile-qr-code" src="" alt="Mobile Access QR" class="w-44 h-44 mx-auto rounded-lg">
+        </div>
+
+        <div class="space-y-1">
+          <span class="text-[11px] font-semibold uppercase text-slate-400">Or type this in your phone's browser:</span>
+          <div class="flex items-center justify-center gap-2">
+            <span id="mobile-url-display" class="font-mono font-bold text-sm bg-slate-100 text-slate-800 px-3 py-1.5 rounded-lg border border-slate-200 select-all">Loading...</span>
+            <button onclick="copyMobileUrl()" class="p-2 bg-slate-200 hover:bg-slate-300 rounded-lg text-slate-700" title="Copy Address">
+              <i data-lucide="copy" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="text-left bg-emerald-50 border border-emerald-200 p-3 rounded-xl text-xs text-emerald-900 space-y-1">
+          <p class="font-bold flex items-center gap-1">
+            <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-600"></i>
+            Tip for Mobile App Feel:
+          </p>
+          <p>Once opened in Chrome or Safari on your phone, tap <strong>"Add to Home screen"</strong> to use it full-screen just like an App!</p>
+        </div>
+
+        <button onclick="closeModal('mobile-connect-modal')" class="w-full py-2.5 bg-slate-900 hover:bg-black text-white rounded-xl text-sm font-semibold transition">
+          Done
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast" class="fixed bottom-4 right-4 bg-slate-900 text-white px-5 py-3 rounded-xl shadow-2xl transition-all transform translate-y-20 opacity-0 z-50 flex items-center gap-2 text-sm font-medium">
+    <span id="toast-message">Notification</span>
+  </div>
+
+  <!-- JavaScript -->
+  <script src="/static/js/app.js"></script>
+</body>
+</html>

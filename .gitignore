@@ -1,0 +1,17 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environment and local data
+.env
+venv/
+env/
+*.log
+
+# Database (Created automatically by database.py on first run)
+gurudatta_store.db
+
+# OS specific files
+.DS_Store
+Thumbs.db
